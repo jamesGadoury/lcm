@@ -553,6 +553,12 @@ static void *recv_thread(void *user)
         if (!lcmb)
             break;
 
+        struct sockaddr_in *from_in = (struct sockaddr_in *) &lcmb->from;
+
+        dbg(DBG_LCM_MSG, "recv_thread: received message on channel [%s] from [%s:%d], size=%d\n",
+            lcmb->channel_name, inet_ntoa(from_in->sin_addr), ntohs(from_in->sin_port),
+            lcmb->data_size);
+
         /* If necessary, notify the reading thread by writing to a pipe.  We
          * only want one character in the pipe at a time to avoid blocking
          * writes, so we only do this when the queue transitions from empty to

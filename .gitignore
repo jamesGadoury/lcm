@@ -12,3 +12,5 @@ MODULE.bazel.lock
 .venv
 .DS_Store
 .cache/
+
+compile_commands.json

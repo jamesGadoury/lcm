@@ -6,6 +6,8 @@ endif()
 
 project(lcm)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # https://www.kitware.com/cmake-and-the-default-build-type/
 # Set a default build type if none was specified
 set(default_build_type "Release")
