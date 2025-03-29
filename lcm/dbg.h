@@ -9,6 +9,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 // clang-format off
 #define _NORMAL_    "\x1b[0m"
@@ -185,15 +186,26 @@ static void dbg_init()
 
 #ifndef NO_DBG
 
-#define dbg(mode, ...)                  \
-    {                                   \
-        if (!dbg_initiated)             \
-            dbg_init();                 \
-        if (dbg_modes & (mode)) {       \
-            printf("%s", DCOLOR(mode)); \
-            printf(__VA_ARGS__);        \
-            printf(_NORMAL_);           \
-        }                               \
+#define dbg(mode, ...)                                                                           \
+    {                                                                                            \
+        if (!dbg_initiated)                                                                      \
+            dbg_init();                                                                          \
+        if (dbg_modes & (mode)) {                                                                \
+            struct timeval tv;                                                                   \
+            struct tm *timeinfo;                                                                 \
+            char time_buffer[64];                                                                \
+                                                                                                 \
+            gettimeofday(&tv, NULL);                                                             \
+            timeinfo = localtime(&tv.tv_sec);                                                    \
+            snprintf(time_buffer, sizeof(time_buffer), "[%04d-%02d-%02d %02d:%02d:%02d.%06ld] ", \
+                     timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,          \
+                     timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, tv.tv_usec);         \
+                                                                                                 \
+            printf("%s", DCOLOR(mode));                                                          \
+            printf("%s", time_buffer);                                                           \
+            printf(__VA_ARGS__);                                                                 \
+            printf(_NORMAL_);                                                                    \
+        }                                                                                        \
     }
 #define dbg_active(mode) (dbg_modes & (mode))
 
