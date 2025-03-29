@@ -249,7 +249,9 @@ static int _recv_message_fragment(lcm_udpm_t *lcm, lcm_buf_t *lcmb, uint32_t sz)
     // discard any stale fragments from previous messages
     if (fbuf && (fbuf->data_size != data_size)) {
         lcm_frag_buf_store_remove(lcm->frag_bufs, fbuf);
-        dbg(DBG_LCM, "Dropping message (missing %d fragments)\n", fbuf->fragments_remaining);
+        dbg(DBG_LCM, "Dropping fragment: offset + size = %u > expected data size %u\n",
+            fragment_offset + frag_size, fbuf->data_size);
+
         fbuf = NULL;
     }
 
@@ -316,9 +318,15 @@ static int _recv_message_fragment(lcm_udpm_t *lcm, lcm_buf_t *lcmb, uint32_t sz)
     fbuf->fragments_remaining--;
 
     if (0 == fbuf->fragments_remaining) {
+        dbg(DBG_LCM_MSG, "Reassembled complete message: channel=%s, size=%d, seqno=%u\n",
+            fbuf->channel, fbuf->data_size, msg_seqno);
+
         // complete message received.  Is there a subscriber that still
         // wants it?  (i.e., does any subscriber have space in its queue?)
         if (!lcm_try_enqueue_message(lcm->lcm, fbuf->channel)) {
+            dbg(DBG_LCM, "Dropping message on channel [%s]: no subscribers or full queue\n",
+                fbuf->channel);
+
             // no... sad... free the fragment buffer and return
             lcm_frag_buf_store_remove(lcm->frag_bufs, fbuf);
             return 0;
@@ -361,7 +369,7 @@ static int _recv_short_message(lcm_udpm_t *lcm, lcm_buf_t *lcmb, int sz)
     lcmb->channel_size = strlen(pkt_channel_str);
 
     if (lcmb->channel_size > LCM_MAX_CHANNEL_NAME_LENGTH) {
-        dbg(DBG_LCM, "bad channel name length\n");
+        dbg(DBG_LCM, "Dropping short message: channel too long (%d bytes)\n", lcmb->channel_size);
         lcm->udp_discarded_bad++;
         return 0;
     }
@@ -369,8 +377,12 @@ static int _recv_short_message(lcm_udpm_t *lcm, lcm_buf_t *lcmb, int sz)
     lcm->udp_rx++;
 
     // if the packet has no subscribers, drop the message now.
-    if (!lcm_try_enqueue_message(lcm->lcm, pkt_channel_str))
+    if (!lcm_try_enqueue_message(lcm->lcm, pkt_channel_str)) {
+        dbg(DBG_LCM, "Dropping message on channel [%s]: no subscribers or full queue\n",
+            pkt_channel_str);
+
         return 0;
+    }
 
     strcpy(lcmb->channel_name, pkt_channel_str);
 
