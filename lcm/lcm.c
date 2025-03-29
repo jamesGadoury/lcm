@@ -150,6 +150,19 @@ static void map_free_handlers_callback(gpointer _key, gpointer _value, gpointer 
     g_ptr_array_free(handlers, TRUE);
     free(_key);
 }
+// Helper to check if any subscription matches a given channel
+int lcm_is_channel_subscribed(lcm_t *lcm, const char *channel)
+{
+    for (unsigned int i = 0; i < lcm->handlers_all->len; i++) {
+        // unsubscribe from all handlers
+        lcm_subscription_t *subscription =
+            (lcm_subscription_t *) g_ptr_array_index(lcm->handlers_all, i);
+        if (strcmp(subscription->channel, channel) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 static void lcm_handler_free(lcm_subscription_t *subscription)
 {

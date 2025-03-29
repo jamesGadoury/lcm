@@ -278,7 +278,6 @@ static int _recv_message_fragment(lcm_udpm_t *lcm, lcm_buf_t *lcmb, uint32_t sz)
         data_start += channel_sz + 1;
         frag_size -= (channel_sz + 1);
     }
-
     if (!fbuf) {
         fbuf = lcm_frag_buf_new(*((struct sockaddr_in *) &lcmb->from), msg_seqno, data_size,
                                 fragments_in_msg, lcmb->recv_utime);
@@ -287,6 +286,13 @@ static int _recv_message_fragment(lcm_udpm_t *lcm, lcm_buf_t *lcmb, uint32_t sz)
 
     if (channel != NULL) {
         memcpy(fbuf->channel, channel, channel_sz + 1);
+
+        if (!lcm_is_channel_subscribed(lcm->lcm, channel)) {
+            printf("Not subscribed to: %s\n", channel);
+            return 0;
+        } else {
+            printf("Subscribed to: %s\n", channel);
+        }
     }
 
 #ifdef __linux__
@@ -780,6 +786,15 @@ static int lcm_udpm_handle(lcm_udpm_t *lcm)
     rbuf.data_size = lcmb->data_size;
     rbuf.recv_utime = lcmb->recv_utime;
     rbuf.lcm = lcm->lcm;
+
+    // if (!lcm_is_channel_subscribed(lcm->lcm, lcmb->channel_name)) {
+    //     dbg(DBG_LCM, "Skipping reassembly for unsubscribed channel %s\n", lcmb->channel_name);
+    //     lcm_buf_free_data(lcmb, lcm->ringbuf);
+    //     lcm_buf_enqueue(lcm->inbufs_empty, lcmb);
+    //     return 0;
+    // } else {
+    //     printf("subscribed to %s", lcmb->channel_name);
+    // }
 
     if (lcm->creating_read_thread) {
         // special case:  If we're creating the read thread and are in

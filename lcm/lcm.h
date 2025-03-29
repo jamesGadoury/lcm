@@ -24,6 +24,7 @@ extern "C" {
 
 #define lcm_create LCM_C_NAMESPACED(create)
 #define lcm_destroy LCM_C_NAMESPACED(destroy)
+#define lcm_is_channel_subscribed LCM_C_NAMESPACED(is_channel_subscribed)
 #define lcm_get_fileno LCM_C_NAMESPACED(get_fileno)
 #define lcm_subscribe LCM_C_NAMESPACED(subscribe)
 #define lcm_unsubscribe LCM_C_NAMESPACED(unsubscribe)
@@ -207,6 +208,9 @@ lcm_t *lcm_create(const char *provider);
  */
 LCM_EXPORT
 void lcm_destroy(lcm_t *lcm);
+
+LCM_EXPORT
+int lcm_is_channel_subscribed(lcm_t *lcm, const char *channel);
 
 /**
  * @brief Returns a file descriptor or socket that can be used with
